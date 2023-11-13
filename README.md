@@ -40,8 +40,8 @@ command to run if the program contains helper info
 
 Contributors names and contact info
 
-Nakisozi Juliana        nakisozijuliana@gmail.com     
-Naveen Kunam            naveen.kunam@aol.com
+Nakisozi Juliana        nakisozijuliana@gmail.com    
+Naveen Kunam            naveen.kunam@aol.com     
 Mirzhan Baipeissov      tadamohlala@gmail.com
 
 ## Version History
