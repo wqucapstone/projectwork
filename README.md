@@ -5,7 +5,7 @@ This project work is done towards the fulfillment of the WQU MScFE Capstone Cour
 # Team Members 
 
 Nakisozi Juliana        nakisozijuliana@gmail.com     
-Naveen Kunam            naveen.kunam@aol.com
+Naveen Kunam            naveen.kunam@aol.com     
 Mirzhan Baipeissov      tadamohlala@gmail.com
 
 ## Description
