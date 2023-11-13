@@ -14,6 +14,22 @@ The commodities market, particularly the oil sector, plays a pivotal role in glo
 
 ## Getting Started
 
+Market Dynamics Understanding and Assessment: 
+
+We have conducted an analysis of the Commodity Market Dynamics using various data sources (see Bibliography). 
+
+Data Sources Utilized: 
+
+Reliable data sources that are freely accessible have been used to source specific macroeconomic, microeconomic, and geopolitical risk factors that have been identified as part of the initial assessment.  
+
+Federal Reserve Economic Data - FRED is a reliable source for historical macroeconomic data. 
+
+EIA (Energy Information Administration) is an official source for Energy Markets Macro/Microdata. 
+
+EPU (Economic Policy Uncertainty) is part of the Fed and is a source of geopolitical data. 	
+
+NYMEX Market Data (part of CME), where all the Oil markets and Derivatives are traded. 
+
 ### Dependencies
 
 The project work is implemented in Python, utilizing a variety of Packages available as part of Standard Python, as well as outside Standard Python as additional packages 
