@@ -7,36 +7,37 @@ from sklearn.model_selection import train_test_split
 
 ### Read Macroeconomic, Microeconomic, and Geopolitical Data from downloaded spreadsheets
 
-gdp_data = pd.read_excel(r'D:\Worldquant\9 Risk Management\GWP\GDP.xlsx', index_col='Date', parse_dates=True)
-Oil_price= pd.read_excel(r'D:\Worldquant\9 Risk Management\GWP\DCOILWTICO.xlsx', index_col='Date', parse_dates=True)
-Production=pd.read_excel(r'D:\Worldquant\9 Risk Management\GWP\U.S._Field_Production_of_Crude_Oil.xlsx', index_col='Date', parse_dates=True)
-Import=pd.read_excel(r'D:\Worldquant\9 Risk Management\GWP\U.S._Imports_of_Crude_Oil.xlsx', index_col='Date', parse_dates=True)
-GPR=pd.read_excel(r'D:\Worldquant\9 Risk Management\GWP\data_gpr_export.xlsx', index_col='Date', parse_dates=True)
+gdp_data = pd.read_excel(r'US_GDP.xlsx', index_col='Date', parse_dates=True)
+spx_data = pd.read_excel(r'SPX_Historical_Levels.xlsx', index_col='Date', parse_dates=True)
+ust_yield = pd.read_excel(r'US_10Y_Constant_Maturity_Yield.xlsx', index_col='Date', parse_dates=True)
+wti_oil_price = pd.read_excel(r'WTI_Historical_Prices.xlsx', index_col='Date', parse_dates=True)
+us_oil_production = pd.read_excel(r'U.S._Field_Production_of_Crude_Oil.xlsx', index_col='Date', parse_dates=True)
+us_oil_imports = pd.read_excel(r'U.S._Imports_of_Crude_Oil.xlsx', index_col='Date', parse_dates=True)
+geopolitical_risk = pd.read_excel(r'geopolitical_risk_data.xlsx', index_col='Date', parse_dates=True)
 
 ### Align Monthly Data with Quarterly GDP Data
 
-aligned_data1 = Oil_price.reindex(gdp_data.index, method='ffill')
-aligned_data2 = Production.reindex(gdp_data.index, method='ffill')
-aligned_data3 = Import.reindex(gdp_data.index, method='ffill')
-aligned_data4 = GPR.reindex(gdp_data.index, method='ffill')
+aligned_wti = wti_oil_price.reindex(gdp_data.index, method='ffill')
+aligned_ust = ust_yield.reindex(gdp_data.index, method='ffill')
+aligned_spx = spx_data.reindex(gdp_data.index, method='ffill')
+aligned_production = us_oil_production.reindex(gdp_data.index, method='ffill')
+aligned_imports = us_oil_imports.reindex(gdp_data.index, method='ffill')
+aligned_risk = geopolitical_risk.reindex(gdp_data.index, method='ffill')
 
 ### Combine GDP and aligned data
-combined_data = pd.concat([gdp_data, aligned_data1, aligned_data2, aligned_data3, aligned_data4], axis=1)
+combined_data = pd.concat([gdp_data, aligned_ust, aligned_spx, aligned_wti, aligned_production, aligned_imports, aligned_risk], axis=1)
 
 data_dictionary = {
     'GDP': gdp_data,
-    'Oil_price': aligned_data1,
-    'Production': aligned_data2,
-    'Import': aligned_data3,
-    'GPR': aligned_data4
+    'wti_oil_price': aligned_wti,
+    'us_10y_treasury_constant_maturity_yield': aligned_ust,
+    'sp_500_index': aligned_spx,
+    'us_oil_production': aligned_production,
+    'us_oil_imports': aligned_imports,
+    'geopolitical_risk': aligned_risk
 }
-print(data_dictionary)
 
-plt.plot(Oil_price)
-plt.ylabel('WTI Crude Price')
-plt.title('WTI Crude Price from January 1990 till October 2023')
-plt.grid(True)
-plt.show()
+print(data_dictionary)
 
 # Data Cleaning
 
@@ -53,7 +54,17 @@ combined_data = combined_data[(z_scores < 3).all(axis=1)]
 
 combined_data = combined_data[~combined_data.index.duplicated(keep='first')]
 
-# US GDP significantly grew from 1990 till 2023
+# Data Visualization - Plotting Time Series of all the Factors being considered
+
+combined_data.plot(figsize=(12,8))
+plt.xlabel('Date')
+plt.ylabel('Value')
+plt.title('Time Series Data for the West Texas Intermediate Crude Oil Price Forecasting')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Data Visualization - US GDP steadily growing from 1990 till 2023
 
 import matplotlib.pyplot as plt
 plt.plot(combined_data.GDP, label = 'US GDP in $ Billions')
@@ -61,9 +72,9 @@ plt.legend()
 plt.show()
 
 
-# WTI Price increased significantly from 1990 till 2023, however it has been range boundsince peaking in 2008
+# WTI Price increased significantly from 1990 till 2023, however it has been range-bound since peaking in 2008
 
-plt.plot(combined_data.DCOILWTICO, label = 'WTI Crude Oil Price in US$')
+plt.plot(combined_data.WTI_Price_in_USD, label = 'WTI Crude Oil Price in US$')
 plt.legend()
 plt.show()
 
@@ -112,138 +123,129 @@ print(sns.pairplot(combined_data, kind='reg'))
 
 # Load crude oil price data (assuming it's already loaded as a DataFrame)
 
-data = pd.read_excel(r'DCOILWTICO.xlsx', index_col='Date', parse_dates=True)
+data = pd.read_excel(r'WTI_Historical_Prices.xlsx', index_col='Date', parse_dates=True)
 
-### Split the data into training, validation, and testing sets
-### 'test_size' parameter is to specify the size of the validation and testing sets (10% each)
-### The remaining 80% of the data will be used for training
+X = combined_data[['US_10Y_CMT_Yield', 'SPX_Close', 'U.S. Field Production of Crude Oil Thousand Barrels per Day',
+                   'U.S. Imports of Crude Oil Thousand Barrels per Day', 'GPR']]
+y = combined_data['WTI_Price_in_USD']
 
-train_data, temp_data = train_test_split(data, test_size=0.2, random_state=42)
-valid_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42)
+# split the dataset into training and testing datasets
 
-### Now, we have our data split into training, validation, and testing sets
-### We can use these sets for machine learning model development and evaluation
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state = 42)
 
-print(train_data)
-print(temp_data)
-print(valid_data)
-print(test_data)
+# Fitting the multiple linear regression model using the Training dataset
 
-### In the code above, we use the train_test_split function from the scikit-learn library to split our data into training, validation, 
-### and testing sets. The test_size parameter is set to 0.2 for the initial split (80% training, 20% combined for validation and testing), 
-### and then the 20% is further split into 10% each for validation and testing.
+mlr_model = LinearRegression()
+mlr_model.fit(X_train, y_train)
 
-### In the code above, we use the train_test_split function from the scikit-learn library to split our data into training, validation, 
-### and testing sets. The test_size parameter is set to 0.2 for the initial split (80% training, 20% combined for validation and testing), 
-### and then the 20% is further split into 10% each for validation and testing.### In the code above, we use the train_test_split function 
-### from the scikit-learn library to split our data into training, validation, and testing sets. The test_size parameter is set to 0.2 for 
-### the initial split (80% training, 20% combined for validation and testing), and then the 20% is further split into 10% each for validation 
-### and testing.
+# Print the model parameters - Intercept, and the Coefficients associated with each explanatory variable
 
-### With this allocation, we can confidently proceed with building, tuning, and evaluating our crude oil price forecasting model. The validation 
-### set will help us fine-tune our model's hyperparameters, while the testing set will provide a final assessment of its performance.
+print("Multilinear Regression Model Intercept : ", mlr_model.intercept_)
+print("Multilinear Regression Model Coefficients : ", mlr_model.coef_)
+print(list(zip(X, mlr_model.coef_)))
 
-!pip install pgmpy
+# Prediction using the testing dataset
 
-import pandas as pd
-from pgmpy.models import BayesianNetwork
-from pgmpy.estimators import HillClimbSearch, BicScore
-from pgmpy.estimators import ParameterEstimator
-from pgmpy.estimators import MaximumLikelihoodEstimator
+y_predicted = mlr_model.predict(X_test)
+
+# Predicted WTI Prices vs Actual WTI prices
+print(pd.DataFrame({'Actual WTI Price': y_test, 'mlr_model Predicted WTI Price': y_predicted}))
+
+# Evaluating the Multi Linear Regression Model Output
+
+from sklearn import metrics
+
+mean_absolute_error = metrics.mean_absolute_error(y_test, y_predicted)
+mean_squared_error = metrics.mean_squared_error(y_test, y_predicted)
+root_mean_squared_error = np.sqrt(mean_squared_error)
+
+print('R-Squared Coefficient: {:.3f}'.format(mlr_model.score(X,y)*100))
+print('Mean Absolute Error (MAS): ', mean_absolute_error)
+print('Mean Squared Error (MSE): ', mean_squared_error)
+print('Root Mean Squared Error (RMSE): ', root_mean_squared_error)
+
+# Building a ARIMA Model using the TIME SERIES WTI Price data to forecast the WTI Prices
 
 import pandas as pd
 import matplotlib.pyplot as plt
+
 from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf, plot_predict
 
 # Load your data with 'Date' and 'Price' columns
-excel_file = 'DCOILWTICO.xlsx'
-df = pd.read_excel(excel_file)
+wti_hist_data = 'WTI_Historical_Prices.xlsx'
+df = pd.read_excel(wti_hist_data, index_col='Date', parse_dates=True)
+
 
 # Determine ARIMA parameters (p, d, q)
-p, d, q = 1, 1, 1  # Adjust based on your data analysis
 
-### Fit an ARIMA model to the 'Price' column
+# Checking the Autocorrelation Function (ACF) and the Partial-Autocorrelation function (PACF) to see data correlation
 
-### Forecast future values
-forecast_steps = 3  # Forecasting for the next 3 periods
+plt.figure(figsize=(16,8))
+plot_acf(df.WTI_Price_in_USD)
 
-print(df['DCOILWTICO'].shape)
+fig = plt.figure(figsize=(16,8))
+axis1 = fig.add_subplot(121)
+axis1.set_title('First order differencing of the WTI Prices')
+axis1.plot(df.WTI_Price_in_USD.diff())
 
-type(results.forecast(steps=forecast_steps))
-
-forecast, stderr, conf_int = results.forecast(steps=forecast_steps)
-
-print(stderr)
-
-### Create an index for the forecasted data
-
-forecast_index = pd.date_range(start=df['Date'].iloc[-1], periods= forecast_steps) 
-print(forecast_index)
-
-print(results.forecast(steps=3))
-
-### Plot the observed 'Price' and the forecast
-
-plt.figure(figsize=(12, 6))
-plt.plot(df.Date, df['DCOILWTICO'], label='Price', color='black')
-plt.plot(forecast_index, results.forecast(steps=3), label='Forecasted Price', color='green', linewidth=10)
-plt.title('Oil Market from 1990 till 2023 - Forecasts for the next 3 months in Yellow')
+axis2 = fig.add_subplot(122)
+plot_acf(df.WTI_Price_in_USD.diff().dropna(), ax=axis2)
 plt.show()
 
-Oil_price= pd.read_excel(r'DCOILWTICO.xlsx', index_col='Date', parse_dates=True)
+# Employing the ADF (Augmented-Dickey-Fuller Test) to test the null-hypothesis that the WTI Time series data is Non-Stationary.
+# Check the p-value for a significance of 0.05, and see if the data is stationary or not.
 
-## Stagnant Oil Prices Periods 
+from statsmodels.tsa.stattools import adfuller
+test_output = adfuller(df.WTI_Price_in_USD.dropna())
+print('The p-value is: ', test_output[1])
 
-plt.plot(Oil_price[:120])
-plt.ylabel('WTI Price')
-plt.title('Oil price stagnated between 1990 till 2000 due to conflicting factors - Gulf wars vs Economic Crisis in Asia, Mexico, Russia')
-plt.grid(True)
+test_output = adfuller(df.WTI_Price_in_USD.diff().dropna())
+print('The p-value is: ', test_output[1])
+
+test_output = adfuller(df.WTI_Price_in_USD.diff().diff().dropna())
+print('The p-value is: ', test_output[1])
+
+# From the above as the p-value is below the threshold after the 1st order differencing, and drops to zero
+# after the 2nd order differencing, we can choose the order as 1.
+# this is also shown by the acf plot above.
+
+# Determine the p parameter -- using the PACF plot
+
+fig = plt.figure(figsize=(16,8))
+axis1 = fig.add_subplot(121)
+axis1.set_title('First order differencing of WTI prices')
+axis1.plot(df.WTI_Price_in_USD.diff())
+
+axis2 = fig.add_subplot(122)
+plot_pacf(df.WTI_Price_in_USD.diff().dropna(), ax=axis2)
 plt.show()
 
-plt.plot(Oil_price[256:293])
-plt.ylabel('WTI Price')
-plt.title('Oil price stagnated between 2011 till 2014 despite Global Economic Recovery and QE, as US Shale boosted supply significantly')
-plt.grid(True)
+## From the above we can observe that the First lag is the most significant. Hence we set the parameter p to 1.
+
+## Determine the q parameter -- using the ACF plot we can see that the MA parameter can be set to 1 as well.
+
+p, d, q = 1, 1, 1  # ARIMA(p=1, d=1, q=1)
+
+### Fit our ARIMA model to the 'WTI Price' column
+
+arima = ARIMA(df.WTI_Price_in_USD, order=(1,1,1))
+fitted_model = arima.fit()
+
+print(fitted_model.summary())
+
+
+arima = ARIMA(df.WTI_Price_in_USD, order=(1,2,1))
+fitted_model = arima.fit()
+
+print(fitted_model.summary())
+
+fig, ax = plt.subplots(figsize=(14,8))
+ax = df.loc['1990-01-01':].plot(ax=ax)
+plot_predict(fitted_model, '2022-11-01', '2023-12-29', ax=ax)
 plt.show()
 
-## Bullish Oil Prices Periods 
-
-plt.plot(Oil_price[144:223])
-plt.ylabel('WTI Price')
-plt.title('Oil Bull Market from Jan 2002 till July 2008, driven by solid US, China GDP growth driven Consumption')
-plt.grid(True)
+plot_predict(fitted_model, '2022-12-29', '2023-12-29')
 plt.show()
-
-plt.plot(Oil_price[231:256])
-plt.ylabel('WTI Price')
-plt.title('Post 2008 Global Financial Crisis, Oil Bull Regime resumed in Apr 2009 till Apr 2011 driven by QE and Global recovery')
-plt.grid(True)
-plt.show()
-
-## Bearish Oil Prices Periods 
-
-plt.plot(Oil_price[222:231])
-plt.ylabel('WTI Price')
-plt.title('Oil Bear Regime from July 2008 till Mar 2009 due to the onset of the 2008 Global Financial Crisis')
-plt.grid(True)
-plt.show()
-
-plt.plot(Oil_price[293:315])
-plt.ylabel('WTI Price')
-plt.title('Oil Bear Regime from July 2014 till Jan 2016 due to Saudi Led OPEC War on US Shale Industry by increasing supply')
-plt.grid(True)
-plt.show()
-
-plt.plot(Oil_price[:143], label='Price', color='grey')
-plt.plot(Oil_price[144:221], label='Price', color='green')
-plt.plot(Oil_price[222:232], label='Price', color='red')
-plt.plot(Oil_price[233:256], label='Price', color='green')
-plt.plot(Oil_price[257:293], label='Price', color='grey')
-plt.plot(Oil_price[294:315], label='Price', color='red')
-plt.plot(Oil_price[316:390], label='Price', color='green')
-plt.plot(Oil_price[391:], label='Price', color='grey')
-plt.ylabel('WTI Price')
-plt.title('Oil Market from 1990 till 2023 - Stagnant, Bull, Bear Market Regimes Fitted')
-plt.grid(True)
-plt.show()
-
