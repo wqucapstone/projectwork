@@ -10,10 +10,11 @@ from sklearn.model_selection import train_test_split
 gdp_data = pd.read_excel(r'US_GDP.xlsx', index_col='Date', parse_dates=True)
 spx_data = pd.read_excel(r'SPX_Historical_Levels.xlsx', index_col='Date', parse_dates=True)
 ust_yield = pd.read_excel(r'US_10Y_Constant_Maturity_Yield.xlsx', index_col='Date', parse_dates=True)
-wti_oil_price = pd.read_excel(r'WTI_Historical_Prices.xlsx', index_col='Date', parse_dates=True)
-us_oil_production = pd.read_excel(r'U.S._Field_Production_of_Crude_Oil.xlsx', index_col='Date', parse_dates=True)
-us_oil_imports = pd.read_excel(r'U.S._Imports_of_Crude_Oil.xlsx', index_col='Date', parse_dates=True)
-geopolitical_risk = pd.read_excel(r'geopolitical_risk_data.xlsx', index_col='Date', parse_dates=True)
+wti_oil_price= pd.read_excel(r'WTI_Historical_Prices.xlsx', index_col='Date', parse_dates=True)
+us_oil_production=pd.read_excel(r'U.S._Field_Production_of_Crude_Oil.xlsx', index_col='Date', parse_dates=True)
+us_oil_imports=pd.read_excel(r'U.S._Imports_of_Crude_Oil.xlsx', index_col='Date', parse_dates=True)
+geopolitical_risk=pd.read_excel(r'geopolitical_risk_data.xlsx', index_col='Date', parse_dates=True)
+vix_index= pd.read_excel(r'VIX_Index.xlsx', index_col='Date', parse_dates=True)
 
 ### Align Monthly Data with Quarterly GDP Data
 
@@ -23,10 +24,11 @@ aligned_spx = spx_data.reindex(gdp_data.index, method='ffill')
 aligned_production = us_oil_production.reindex(gdp_data.index, method='ffill')
 aligned_imports = us_oil_imports.reindex(gdp_data.index, method='ffill')
 aligned_risk = geopolitical_risk.reindex(gdp_data.index, method='ffill')
+aligned_vix = vix_index.reindex(gdp_data.index, method='ffill')
 
 ### Combine GDP and aligned data
-combined_data = pd.concat([gdp_data, aligned_ust, aligned_spx, aligned_wti, aligned_production, aligned_imports, aligned_risk], axis=1)
-
+combined_data = pd.concat([gdp_data, aligned_ust, aligned_spx, aligned_wti, aligned_production, aligned_imports, 
+                           aligned_risk, aligned_vix], axis=1)
 data_dictionary = {
     'GDP': gdp_data,
     'wti_oil_price': aligned_wti,
@@ -34,7 +36,8 @@ data_dictionary = {
     'sp_500_index': aligned_spx,
     'us_oil_production': aligned_production,
     'us_oil_imports': aligned_imports,
-    'geopolitical_risk': aligned_risk
+    'geopolitical_risk': aligned_risk,
+    'vix_index': aligned_vix
 }
 
 print(data_dictionary)
@@ -50,9 +53,13 @@ combined_data.interpolate(method='linear', inplace=True)
 z_scores = np.abs((combined_data - combined_data.mean()) / combined_data.std())
 combined_data = combined_data[(z_scores < 3).all(axis=1)]
 
+print(combined_data.dtypes)
+
 # Handling Duplicates- ensures only the first occurrence of duplicate dates is kept.
 
 combined_data = combined_data[~combined_data.index.duplicated(keep='first')]
+
+print(combined_data.head())
 
 # Data Visualization - Plotting Time Series of all the Factors being considered
 
@@ -62,21 +69,22 @@ plt.ylabel('Value')
 plt.title('Time Series Data for the West Texas Intermediate Crude Oil Price Forecasting')
 plt.legend()
 plt.grid(True)
-plt.show()
+print(plt.show())
 
 # Data Visualization - US GDP steadily growing from 1990 till 2023
 
 import matplotlib.pyplot as plt
 plt.plot(combined_data.GDP, label = 'US GDP in $ Billions')
 plt.legend()
-plt.show()
+print(plt.show())
 
 
 # WTI Price increased significantly from 1990 till 2023, however it has been range-bound since peaking in 2008
 
+plt.figure(figsize=(12,8))
 plt.plot(combined_data.WTI_Price_in_USD, label = 'WTI Crude Oil Price in US$')
 plt.legend()
-plt.show()
+print(plt.show())
 
 bull_start_date = '2000-01-01'
 bull_end_date = '2008-03-01'
@@ -84,21 +92,54 @@ bull_end_date = '2008-03-01'
 
 ### GDP vs US Aggregate Daily Crude Oil Demand
 
-plt.plot(combined_data.GDP, label='US Nominal GDP in US$')
+plt.figure(figsize=(12,8))
+plt.plot(combined_data['GDP (in $ Billions)'], label='US Nominal GDP in US$')
 plt.plot(combined_data['U.S. Field Production of Crude Oil Thousand Barrels per Day']+combined_data['U.S. Imports of Crude Oil Thousand Barrels per Day'], label = 'U.S Daily Crude Oil Consumption (tbpd)')
 plt.legend(title='US Nominal GDP vs US Daily Production')
-plt.show()
+plt.ylabel('Value in 1000s')
+plt.title('US Nominal GDP (in $ Billion) vs Crude oil consumption (1000s of bpd)')
+print(plt.show())
 
-plt.plot(combined_data.GDP, label='US Nominal GDP in US$')
+plt.figure(figsize=(12,8))
+plt.plot(combined_data['GDP (in $ Billions)'], label='US Nominal GDP in US$')
 plt.plot(combined_data['U.S. Field Production of Crude Oil Thousand Barrels per Day'], label = 'U.S Daily Crude Oil Production (tbpd)')
 plt.legend(title='US Nominal GDP vs US Daily Production')
-plt.show()
+print(plt.show())
 
-plt.plot(combined_data.GDP, label='US Nominal GDP in US$')
+plt.figure(figsize=(12,8))
+plt.plot(combined_data['GDP (in $ Billions)'], label='US Nominal GDP in US$')
 plt.plot(combined_data['U.S. Imports of Crude Oil Thousand Barrels per Day'], label = 'U.S Daily Crude Oil Imports (tbpd)')
 plt.legend(title='US Nominal GDP vs US Daily Imports')
-plt.show()
+print(plt.show())
 
+plt.figure(figsize=(12,8))
+plt.plot(combined_data['U.S. Field Production of Crude Oil Thousand Barrels per Day'], label = 'U.S Daily Crude Oil Production (tbpd)')
+plt.plot(combined_data['U.S. Imports of Crude Oil Thousand Barrels per Day'], label = 'U.S Daily Crude Oil Imports (tbpd)')
+plt.ylabel('Value in 1000s')
+plt.title('US Crude Production (in 1000s of bpd) vs Imports')
+print(plt.show())
+
+
+combined_data.index = pd.to_datetime(combined_data.index)
+
+fig, ax1 = plt.subplots()
+
+ax1.plot(combined_data.index, combined_data['U.S. Imports of Crude Oil Thousand Barrels per Day'], 
+         color='blue', label='U.S Daily Crude Oil Imports (tbpd)')
+ax1.set_xlabel('Date')
+ax1.set_ylabel('Imports in 1000s of bpd', color='blue')
+ax1.tick_params('y', colors='blue')
+
+ax2 = ax1.twinx()
+ax2.plot(combined_data.index, combined_data.WTI_Price_in_USD, color='green', label='WTI Crude Oil Price in US$')
+ax2.set_ylabel('WTI Crude Oil Price in US$', color='green')
+ax2.tick_params('y', colors='green')
+
+plt.title('US crude oil imports (in tbpd) vs WTI price in $')
+fig.legend(loc='upper left', bbox_to_anchor=(0.15, 0.85))
+
+# Display the plot
+print(plt.show())
 
 # ### Distributional Plots
 #      A pair plot creates a grid of scatter plots to compare the distribution of pairs of numeric variables.
@@ -121,12 +162,17 @@ print(sns.pairplot(combined_data, kind='scatter'))
 print(sns.pairplot(combined_data, kind='reg'))
 
 
+
+# Model building - Part 1
+
+# Multiple Linear Regression Model
+
 # Load crude oil price data (assuming it's already loaded as a DataFrame)
 
 data = pd.read_excel(r'WTI_Historical_Prices.xlsx', index_col='Date', parse_dates=True)
 
 X = combined_data[['US_10Y_CMT_Yield', 'SPX_Close', 'U.S. Field Production of Crude Oil Thousand Barrels per Day',
-                   'U.S. Imports of Crude Oil Thousand Barrels per Day', 'GPR']]
+                   'U.S. Imports of Crude Oil Thousand Barrels per Day', 'GPR', 'VIX']]
 y = combined_data['WTI_Price_in_USD']
 
 # split the dataset into training and testing datasets
@@ -165,6 +211,11 @@ print('R-Squared Coefficient: {:.3f}'.format(mlr_model.score(X,y)*100))
 print('Mean Absolute Error (MAS): ', mean_absolute_error)
 print('Mean Squared Error (MSE): ', mean_squared_error)
 print('Root Mean Squared Error (RMSE): ', root_mean_squared_error)
+
+
+# Model building - Part 2
+
+# Time series modeling
 
 # Building a ARIMA Model using the TIME SERIES WTI Price data to forecast the WTI Prices
 

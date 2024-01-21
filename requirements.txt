@@ -1,0 +1,17 @@
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.2
+pandas>=1.5
+pyparsing>=3.0
+torch>=1.13
+statsmodels>=0.13
+tqdm>=4.64
+joblib>=1.2
+opt_einsum>=3.3
+pydantic==1.10.2
+py4j==0.10.9
+SQLAlchemy==1.4.44
+request==2.28.2
+python-dateutil==2.8.2
+starlette==0.19.1
+pytest>=3.3.1
